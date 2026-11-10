@@ -13,6 +13,43 @@ ToolCallBlocks.HEADER_HEIGHT = 2
 --- @field start_row integer
 --- @field end_row integer
 
+--- Statuscolumn calls this per visible line per redraw, so index all blocks
+--- once per buffer change instead of querying extmarks for every line.
+--- @type table<integer, {tick: integer, ranges: agentic.ui.ToolCallBlocks.Range[]}>
+local range_cache = {}
+
+--- @param bufnr integer
+--- @return agentic.ui.ToolCallBlocks.Range[] ranges sorted by start_row
+function ToolCallBlocks._ranges(bufnr)
+    local tick = vim.api.nvim_buf_get_changedtick(bufnr)
+    local cached = range_cache[bufnr]
+    if cached and cached.tick == tick then
+        return cached.ranges
+    end
+
+    local ranges = {}
+    local ok, extmarks = pcall(
+        vim.api.nvim_buf_get_extmarks,
+        bufnr,
+        ToolCallBlocks.NS_TOOL_BLOCKS,
+        0,
+        -1,
+        { details = true }
+    )
+    if ok then
+        for _, extmark in ipairs(extmarks) do
+            local end_row = (extmark[4] or {}).end_row
+            if end_row then
+                ranges[#ranges + 1] =
+                    { start_row = extmark[2], end_row = end_row }
+            end
+        end
+    end
+
+    range_cache[bufnr] = { tick = tick, ranges = ranges }
+    return ranges
+end
+
 --- @param bufnr integer
 --- @param row integer
 --- @return agentic.ui.ToolCallBlocks.Range|nil range
@@ -21,38 +58,31 @@ function ToolCallBlocks.block_range_at_row(bufnr, row)
         return nil
     end
 
-    local ok, extmarks = pcall(
-        vim.api.nvim_buf_get_extmarks,
-        bufnr,
-        ToolCallBlocks.NS_TOOL_BLOCKS,
-        { row, 0 },
-        { row, -1 },
-        {
-            details = true,
-            limit = 1,
-            overlap = true,
-        }
-    )
+    local ranges = ToolCallBlocks._ranges(bufnr)
+    local lo, hi = 1, #ranges
+    local found --- @type agentic.ui.ToolCallBlocks.Range|nil
+    while lo <= hi do
+        local mid = math.floor((lo + hi) / 2)
+        if ranges[mid].start_row <= row then
+            found = ranges[mid]
+            lo = mid + 1
+        else
+            hi = mid - 1
+        end
+    end
 
-    if not ok or not extmarks or not extmarks[1] then
+    if not found then
         return nil
     end
 
-    local extmark = extmarks[1]
-    local start_row = extmark[2]
-    local details = extmark[4] or {}
-    local end_row = details.end_row
-
-    if not end_row or row < start_row or row > end_row then
-        return nil
+    -- Match extmark query order: earliest-starting range covering the row.
+    local idx = lo - 1
+    local result --- @type agentic.ui.ToolCallBlocks.Range|nil
+    while idx >= 1 and ranges[idx].end_row >= row do
+        result = ranges[idx]
+        idx = idx - 1
     end
-
-    --- @type agentic.ui.ToolCallBlocks.Range
-    local range = {
-        start_row = start_row,
-        end_row = end_row,
-    }
-    return range
+    return result
 end
 
 --- @param bufnr integer
