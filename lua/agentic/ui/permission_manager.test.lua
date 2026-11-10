@@ -287,6 +287,25 @@ describe("agentic.ui.PermissionManager", function()
         end)
     end)
 
+    describe("on_focus_change", function()
+        it("fires only for focus moves, not for queued arrivals", function()
+            local changes = {}
+            pm._on_focus_change = function(old_id, new_id)
+                table.insert(changes, { old_id, new_id })
+            end
+            seed_block("tc-1")
+            seed_block("tc-2")
+            local noop = spy.new(function() end) --[[@as function]]
+
+            pm:add_request(make_request("tc-1"), noop)
+            pm:add_request(make_request("tc-2"), noop)
+            assert.same({ { nil, "tc-1" } }, changes)
+
+            pm:resolve("tc-1", nil)
+            assert.same({ { nil, "tc-1" }, { "tc-1", "tc-2" } }, changes)
+        end)
+    end)
+
     describe("focus head tracking", function()
         it(
             "first arrival sets focused_id and installs digit keymaps",

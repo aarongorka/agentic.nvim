@@ -25,18 +25,21 @@ local MAX_DIGIT_KEYS = vim.tbl_count(PERMISSION_KIND_PRIORITY)
 --- @field _order string[] Insertion order of pending tool_call_ids
 --- @field focused_id? string Currently focused tool_call_id
 --- @field _cycle_keymaps_installed boolean
+--- @field _on_focus_change? fun(old_id: string|nil, new_id: string|nil)
 local PermissionManager = {}
 PermissionManager.__index = PermissionManager
 
 --- @param message_writer agentic.ui.MessageWriter
+--- @param on_focus_change? fun(old_id: string|nil, new_id: string|nil)
 --- @return agentic.ui.PermissionManager
-function PermissionManager:new(message_writer)
+function PermissionManager:new(message_writer, on_focus_change)
     self = setmetatable({
         message_writer = message_writer,
         pending = {},
         _order = {},
         focused_id = nil,
         _cycle_keymaps_installed = false,
+        _on_focus_change = on_focus_change,
     }, self)
 
     return self
@@ -313,6 +316,10 @@ function PermissionManager:_set_focus(new_id)
     end
 
     self.focused_id = new_id
+
+    if self._on_focus_change then
+        pcall(self._on_focus_change, old_id, new_id)
+    end
 
     if old_id and self.pending[old_id] then
         self.message_writer:set_permission_state(old_id, {

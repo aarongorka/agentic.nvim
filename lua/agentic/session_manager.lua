@@ -104,7 +104,19 @@ function SessionManager:new(agent, provider_name, on_new_session)
     self.message_writer:set_provider_name(self.agent.provider_config.name)
     self.status_animation = StatusAnimation:new(self.widget.buf_nrs.chat)
 
-    self.permission_manager = PermissionManager:new(self.message_writer)
+    -- Only the focused request's diff is shown; one split diff per pending
+    -- request would exceed Vim's 8-buffer diff limit (E96).
+    self.permission_manager = PermissionManager:new(
+        self.message_writer,
+        function(old_id, new_id)
+            if old_id and self.permission_manager.pending[old_id] then
+                self.diff_coordinator:clear(old_id)
+            end
+            if new_id then
+                self.diff_coordinator:show(new_id)
+            end
+        end
+    )
 
     -- Strong reference required: `instances_by_buffer` holds only weak values.
     self.file_picker = FilePicker:new(self.widget.buf_nrs.input)
@@ -772,7 +784,6 @@ function SessionManager:_build_handlers(is_replaying)
                 end
             end
 
-            self.diff_coordinator:show(request.toolCall.toolCallId)
             self.permission_manager:add_request(request, wrapped_callback)
         end,
     }
