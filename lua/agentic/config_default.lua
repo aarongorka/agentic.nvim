@@ -350,6 +350,7 @@
 --- @field folding agentic.UserConfig.Folding
 --- @field tool_calls agentic.UserConfig.ToolCalls
 --- @field hooks agentic.UserConfig.Hooks
+--- @field system_info? fun(default: fun(): string): string Builds the text sent with the first prompt. `default` returns the built-in block. Return an empty string to send nothing.
 --- @field headers agentic.UserConfig.Headers
 --- @field acp_configs agentic.UserConfig.ACPConfigs
 --- @field settings agentic.UserConfig.Settings
@@ -640,6 +641,8 @@ local ConfigDefault = {
         on_file_edit = nil,
         on_request_permission = nil,
     },
+
+    system_info = nil,
 
     headers = {},
 

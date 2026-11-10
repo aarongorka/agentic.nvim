@@ -1043,6 +1043,15 @@ time for the first response.
 To add your own text after that block, return a string from the
 `before_first_prompt` [event hook](#event-hooks).
 
+To replace the block, set `system_info`. It receives a function returning the
+default text; return `""` to send nothing:
+
+```lua
+system_info = function(default)
+  return default() .. "\n- Hostname: " .. vim.uv.os_gethostname()
+end
+```
+
 ### Event Hooks
 
 Agentic.nvim provides hooks that let you respond to specific events during the

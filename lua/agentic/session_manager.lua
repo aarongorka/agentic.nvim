@@ -574,6 +574,19 @@ function SessionManager:_handle_input_submit(input_text)
         self._is_first_message = false
 
         local environment = EnvironmentInfo.get_system_info()
+        if Config.system_info then
+            local ok, custom = pcall(Config.system_info, function()
+                return environment
+            end)
+            if ok and type(custom) == "string" then
+                environment = custom
+            else
+                Logger.notify(
+                    "system_info failed, using default: " .. tostring(custom),
+                    vim.log.levels.WARN
+                )
+            end
+        end
         --- @type agentic.UserConfig.BeforeFirstPromptData
         local first_prompt_hook_data = {
             session_id = self.session_id,
@@ -591,7 +604,8 @@ function SessionManager:_handle_input_submit(input_text)
             return false
         end
         if extra_instructions and extra_instructions ~= "" then
-            environment = environment .. "\n\n" .. extra_instructions
+            environment = environment == "" and extra_instructions
+                or environment .. "\n\n" .. extra_instructions
         end
         local capabilities = self.agent.agent_capabilities
         local prompt_capabilities = capabilities
@@ -610,7 +624,7 @@ function SessionManager:_handle_input_submit(input_text)
                     text = environment,
                 },
             }
-        else
+        elseif environment ~= "" then
             prompt[#prompt + 1] = { type = "text", text = environment }
         end
     end

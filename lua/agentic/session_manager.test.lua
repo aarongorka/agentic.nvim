@@ -2475,6 +2475,73 @@ describe("agentic.SessionManager", function()
                 end)
             end
 
+            describe("system_info config", function()
+                --- @type fun(default: fun(): string): string
+                local original
+                --- @type TestStub
+                local notify_stub
+
+                before_each(function()
+                    original = Config.system_info
+                    notify_stub = spy.stub(Logger, "notify")
+                end)
+
+                after_each(function()
+                    Config.system_info = original
+                    notify_stub:revert()
+                end)
+
+                --- @return agentic.acp.Content[]
+                local function first_prompt()
+                    local session = make_session()
+                    session._is_first_message = true
+                    local prompts = {}
+                    session.agent.send_prompt = function(
+                        _self,
+                        _sid,
+                        prompt,
+                        callback
+                    )
+                        prompts[#prompts + 1] = prompt
+                        callback(nil, nil)
+                    end
+                    session:_handle_input_submit("hello")
+                    flush_schedule()
+                    return prompts[1]
+                end
+
+                it("can extend the default", function()
+                    Config.system_info = function(default)
+                        return default() .. "\nextra"
+                    end
+                    assert.same({
+                        { type = "text", text = "hello" },
+                        { type = "text", text = environment .. "\nextra" },
+                    }, first_prompt())
+                end)
+
+                it("sends nothing for an empty string", function()
+                    Config.system_info = function()
+                        return ""
+                    end
+                    assert.same(
+                        { { type = "text", text = "hello" } },
+                        first_prompt()
+                    )
+                end)
+
+                it("falls back to the default and warns on error", function()
+                    Config.system_info = function()
+                        error("boom")
+                    end
+                    assert.same({
+                        { type = "text", text = "hello" },
+                        { type = "text", text = environment },
+                    }, first_prompt())
+                    assert.spy(notify_stub).was.called(1)
+                end)
+            end)
+
             describe("before_first_prompt hook", function()
                 --- @type fun(data: agentic.UserConfig.BeforeFirstPromptData): string|nil
                 local original
