@@ -99,6 +99,7 @@
 --- @field next_session agentic.UserConfig.KeymapValue Show the next session
 --- @field prev_session agentic.UserConfig.KeymapValue Show the previous session
 --- @field destroy_session agentic.UserConfig.KeymapValue Destroy the current session
+--- @field stop_generation agentic.UserConfig.KeymapValue Stop the agent's current generation or tool execution
 
 --- Key bindings for the prompt buffer
 --- @class agentic.UserConfig.Keymaps.Prompt
@@ -495,6 +496,7 @@ local ConfigDefault = {
             next_session = "<localLeader>]",
             prev_session = "<localLeader>[",
             destroy_session = "<localLeader>D",
+            stop_generation = "<localLeader>x",
         },
 
         --- Keys bindings for the prompt buffer

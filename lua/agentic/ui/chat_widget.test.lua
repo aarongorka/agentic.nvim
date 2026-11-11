@@ -1656,6 +1656,45 @@ describe("agentic.ui.ChatWidget", function()
         )
     end)
 
+    describe("stop_generation keymap", function()
+        local widget
+
+        before_each(function()
+            vim.cmd("tabnew")
+            widget = ChatWidget:new(spy.new(function() end) --[[@as function]])
+        end)
+
+        after_each(function()
+            pcall(function()
+                widget:destroy()
+            end)
+            pcall(function()
+                vim.cmd("tabclose")
+            end)
+        end)
+
+        it("is bound in every panel and stops the current agent", function()
+            local Agentic = require("agentic")
+            local stop_stub = spy.stub(Agentic, "stop_generation")
+
+            for _, bufnr in pairs(widget.buf_nrs) do
+                local mapping
+                for _, map in ipairs(vim.api.nvim_buf_get_keymap(bufnr, "n")) do
+                    if map.desc == "Agentic: Stop generation" then
+                        mapping = map
+                    end
+                end
+
+                assert.is_not_nil(mapping)
+                mapping.callback()
+            end
+
+            local panel_count = vim.tbl_count(widget.buf_nrs)
+            stop_stub:revert()
+            assert.spy(stop_stub).was.called(panel_count)
+        end)
+    end)
+
     describe("destroy", function()
         local widget
 

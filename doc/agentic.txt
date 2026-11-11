@@ -662,6 +662,7 @@ These keybindings are automatically set in Agentic buffers:
   <localLeader>]         n       Open the next session
   <localLeader>[         n       Open the previous session
   <localLeader>D         n       Destroy the current session
+  <localLeader>x         n       Stop the agent (session stays active)
   q                      n       Hide chat widget (session keeps running)
   d                      n/v     Remove file/selection/diagnostic
   ]]                     n       Next chat heading
@@ -702,6 +703,7 @@ Override default keybindings via the `keymaps` config option:
         next_session = "<localLeader>]",
         prev_session = "<localLeader>[",
         destroy_session = "<localLeader>D",
+        stop_generation = "<localLeader>x",
       },
       prompt = {
         submit = {

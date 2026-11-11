@@ -798,6 +798,7 @@ These keybindings are automatically set in Agentic buffers:
 | `<localLeader>]` | n     | Open the next session                                           |
 | `<localLeader>[` | n     | Open the previous session                                       |
 | `<localLeader>D` | n     | Destroy the current session                                     |
+| `<localLeader>x` | n     | Stop the agent (session stays active)                           |
 | `q`              | n     | Hide chat widget (session keeps running)                        |
 | `d`              | n     | Remove file, code selection, or diagnostic at cursor            |
 | `d`              | v     | Remove multiple selected files, code selections, or diagnostics |
@@ -836,6 +837,7 @@ your setup:
         next_session = "<localLeader>]",    -- Open the next session
         prev_session = "<localLeader>[",    -- Open the previous session
         destroy_session = "<localLeader>D", -- Destroy the current session
+        stop_generation = "<localLeader>x", -- Stop the agent (session stays active)
       },
 
       -- Keybindings for the prompt buffer only

@@ -558,6 +558,15 @@ function ChatWidget:_bind_keymaps()
             end,
             { desc = "Agentic: Destroy session" }
         )
+
+        BufHelpers.multi_keymap_set(
+            Config.keymaps.widget.stop_generation,
+            bufnr,
+            function()
+                require("agentic").stop_generation()
+            end,
+            { desc = "Agentic: Stop generation" }
+        )
     end
 
     -- Editing keys in a read-only panel jump to the input and start insert.
