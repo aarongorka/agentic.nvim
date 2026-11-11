@@ -2073,6 +2073,29 @@ describe("agentic.ui.MessageWriter", function()
             end
         )
 
+        it("replaces the body instead of appending when replace_body", function()
+            writer:write_tool_call_block(
+                make_tool_call_block("cumulative", "in_progress", { "line1" })
+            )
+
+            for _, text in ipairs({ "line1\nline2", "line1\nline2\nline3" }) do
+                writer:update_tool_call_block({
+                    tool_call_id = "cumulative",
+                    body = vim.split(text, "\n"),
+                    replace_body = true,
+                })
+            end
+
+            assert.same(
+                { "line1", "line2", "line3" },
+                writer.tool_call_blocks["cumulative"].body
+            )
+            assert.equal(
+                1,
+                #vim.fn.matchbufline(bufnr, "^line1$", 1, "$")
+            )
+        end)
+
         it("leaves malformed JSON unchanged", function()
             local malformed = "{" .. string.rep("not valid json ", 10) .. "}"
 

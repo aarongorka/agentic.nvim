@@ -48,6 +48,7 @@ local TITLE_FENCE = "`````"
 --- @field extmark_id? integer Range extmark spanning the block
 --- @field status? agentic.acp.ToolCallStatus
 --- @field body? string[]
+--- @field replace_body? boolean Update-only: `body` replaces the previous body instead of being appended
 --- @field diff? agentic.ui.MessageWriter.ToolCallDiff
 --- @field has_fold? boolean
 --- @field permission? agentic.ui.MessageWriter.PermissionState
@@ -531,6 +532,7 @@ function MessageWriter:update_tool_call_block(tool_call_block)
     if
         previous_body
         and tool_call_block.body
+        and not tool_call_block.replace_body
         and not vim.deep_equal(previous_body, tool_call_block.body)
     then
         local merged = vim.list_extend({}, previous_body)
@@ -539,6 +541,7 @@ function MessageWriter:update_tool_call_block(tool_call_block)
         tracker.body = merged
     end
 
+    tracker.replace_body = nil
     self.tool_call_blocks[tool_call_block.tool_call_id] = tracker
 
     local pos = vim.api.nvim_buf_get_extmark_by_id(

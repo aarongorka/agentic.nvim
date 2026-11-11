@@ -2322,5 +2322,58 @@ describe("ACPClient", function()
             assert.is_true(message.diff ~= nil)
             assert.equal(nil, message.body)
         end)
+
+        -- Copilot streams the whole output so far in every update.
+        describe("cumulative_tool_output", function()
+            local update = {
+                toolCallId = "tc-x",
+                kind = "execute",
+                content = {
+                    {
+                        type = "content",
+                        content = { type = "text", text = "line1\nline2" },
+                    },
+                },
+            }
+
+            it("marks the body as a full replacement when enabled", function()
+                local client = create_ready_client()
+                client.provider_config.cumulative_tool_output = true
+
+                ---@diagnostic disable: invisible, assign-type-mismatch
+                local message = client:__build_tool_call_message(update)
+                ---@diagnostic enable: invisible, assign-type-mismatch
+
+                assert.same({ "line1", "line2" }, message.body)
+                assert.is_true(message.replace_body)
+            end)
+
+            it("leaves the body appendable when disabled", function()
+                local client = create_ready_client()
+
+                ---@diagnostic disable: invisible, assign-type-mismatch
+                local message = client:__build_tool_call_message(update)
+                ---@diagnostic enable: invisible, assign-type-mismatch
+
+                assert.same({ "line1", "line2" }, message.body)
+                assert.is_nil(message.replace_body)
+            end)
+
+            it("does not mark a body taken from rawInput", function()
+                local client = create_ready_client()
+                client.provider_config.cumulative_tool_output = true
+
+                ---@diagnostic disable: invisible, assign-type-mismatch
+                local message = client:__build_tool_call_message({
+                    toolCallId = "tc-x",
+                    kind = "execute",
+                    rawInput = { command = "ls", description = "List" },
+                })
+                ---@diagnostic enable: invisible, assign-type-mismatch
+
+                assert.same({ "List" }, message.body)
+                assert.is_nil(message.replace_body)
+            end)
+        end)
     end)
 end)

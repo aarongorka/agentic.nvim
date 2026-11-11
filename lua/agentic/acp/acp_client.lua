@@ -605,6 +605,12 @@ function ACPClient:__build_tool_call_message(update)
                 vim.list_extend(merged, body_parts[i])
             end
             message.body = merged
+
+            -- Copilot streams the whole output so far in every update, so
+            -- appending each one repeats the earlier lines.
+            if self.provider_config.cumulative_tool_output then
+                message.replace_body = true
+            end
         end
     end
 

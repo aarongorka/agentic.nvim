@@ -418,6 +418,7 @@ local ConfigDefault = {
                 "--acp",
                 "--stdio",
             },
+            cumulative_tool_output = true,
             env = {},
         },
 
