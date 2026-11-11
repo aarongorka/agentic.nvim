@@ -2323,6 +2323,39 @@ describe("ACPClient", function()
             assert.equal(nil, message.body)
         end)
 
+        it("replaces a generic Copilot edit title with the file path", function()
+            local client = create_ready_client()
+
+            ---@diagnostic disable: invisible, assign-type-mismatch
+            local message = client:__build_tool_call_message({
+                toolCallId = "tc-x",
+                kind = "edit",
+                title = "Create file",
+                rawInput = { fileName = "/some/long/dir/hello.txt" },
+            })
+            ---@diagnostic enable: invisible, assign-type-mismatch
+
+            assert.equal(
+                vim.fn.fnamemodify("/some/long/dir/hello.txt", ":~:."),
+                message.argument
+            )
+        end)
+
+        it("keeps an edit title that names the file", function()
+            local client = create_ready_client()
+
+            ---@diagnostic disable: invisible, assign-type-mismatch
+            local message = client:__build_tool_call_message({
+                toolCallId = "tc-x",
+                kind = "edit",
+                title = "Editing hello.txt",
+                locations = { { path = "/some/long/dir/hello.txt" } },
+            })
+            ---@diagnostic enable: invisible, assign-type-mismatch
+
+            assert.equal("Editing hello.txt", message.argument)
+        end)
+
         -- Copilot streams the whole output so far in every update.
         describe("cumulative_tool_output", function()
             local update = {

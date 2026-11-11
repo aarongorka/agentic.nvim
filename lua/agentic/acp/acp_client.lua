@@ -632,13 +632,24 @@ function ACPClient:__build_tool_call_message(update)
     end
 
     if not message.file_path and raw_input then
-        message.file_path = raw_input.file_path or raw_input.filePath
+        message.file_path = raw_input.file_path
+            or raw_input.filePath
+            or raw_input.fileName
     end
 
     if not message.file_path and type(update.locations) == "table" then
         local first_location = update.locations[1]
         if first_location and first_location.path then
             message.file_path = first_location.path
+        end
+    end
+
+    -- Copilot's permission request titles a new file just "Create file", with
+    -- the path only in `rawInput.fileName`.
+    if update.kind == "edit" and message.file_path and message.argument then
+        local basename = vim.fs.basename(message.file_path)
+        if not message.argument:find(basename, 1, true) then
+            message.argument = vim.fn.fnamemodify(message.file_path, ":~:.")
         end
     end
 
